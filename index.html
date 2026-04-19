@@ -11,13 +11,12 @@
         .container { max-width: 600px; margin: auto; }
         .card { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
         input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; font-size: 16px; }
-        button { width: 100%; padding: 12px; margin: 5px 0; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 16px; }
+        button { width: 100%; padding: 12px; margin: 5px 0; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
         .btn-save { background-color: #27ae60; color: white; }
         .btn-print { background-color: #2980b9; color: white; }
         .btn-excel { background-color: #f39c12; color: white; }
-        .case-card { background: white; padding: 15px; border-radius: 8px; border-left: 5px solid var(--accent); margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); position: relative; }
+        .case-card { background: white; padding: 15px; border-radius: 8px; border-left: 5px solid var(--accent); margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .party-name { font-weight: bold; color: var(--primary); font-size: 18px; margin: 0; }
-        .btn-delete { background: #e74c3c; color: white; width: auto; padding: 5px 10px; float: right; }
         @media print { .no-print { display: none; } .print-only { display: block !important; } }
         .print-only { display: none; }
     </style>
@@ -29,20 +28,20 @@
         <h2 style="text-align:center;">Kanji M. Garchar Law Firm</h2>
         <div class="card">
             <input type="date" id="prevDate" placeholder="Prev. Date">
-            <select id="court">
-                <option value="">Select Court</option>
-                <option value="Morbi Court">Morbi Court</option>
-                <option value="District Court">District Court</option>
-                <option value="High Court">High Court</option>
-                <option value="Revenue Court">Revenue Court</option>
-            </select>
-            <select id="caseType">
-                <option value="">Select Case Type</option>
-                <option value="Civil">Civil</option>
-                <option value="Criminal">Criminal</option>
-                <option value="Revenue">Revenue</option>
-                <option value="Family">Family</option>
-            </select>
+            <input type="text" id="court" placeholder="Court Name" list="court-list">
+            <datalist id="court-list">
+                <option value="Morbi Court">
+                <option value="District Court">
+                <option value="High Court">
+                <option value="Revenue Court">
+            </datalist>
+            <input type="text" id="caseType" placeholder="Case Type" list="type-list">
+            <datalist id="type-list">
+                <option value="Civil">
+                <option value="Criminal">
+                <option value="Revenue">
+                <option value="Family">
+            </datalist>
             <input type="text" id="caseNo" placeholder="Case No.">
             <input type="text" id="partyName" placeholder="Party Name">
             <input type="text" id="oppParty" placeholder="Opp. Party Name">
@@ -54,7 +53,7 @@
         <div class="card">
             <input type="date" id="filterDate">
             <button class="btn-print" onclick="window.print()">Print Today's Board</button>
-            <button class="btn-excel" onclick="exportToExcel()">Download Excel Report</button>
+            <button class="btn-excel" onclick="exportToExcel()">Download Excel</button>
         </div>
     </div>
 
@@ -66,7 +65,7 @@
 </div>
 
 <script>
-    // જૂના ડેટા લોડ કરવા માટેના અલગ-અલગ નામ ચેક કરશે
+    // AA LINE KHAS: Juna badha data pacha khechi lavse
     let cases = JSON.parse(localStorage.getItem('lawCases')) || JSON.parse(localStorage.getItem('cases')) || [];
 
     function saveCase() {
@@ -88,35 +87,35 @@
         clearForm();
     }
 
-    function deleteCase(id) {
-        if(confirm("Are you sure?")) {
-            cases = cases.filter(c => c.id !== id);
-            localStorage.setItem('lawCases', JSON.stringify(cases));
-            displayCases();
-        }
-    }
-
     function displayCases() {
         const list = document.getElementById('caseList');
         const filterDate = document.getElementById('filterDate').value;
-        document.getElementById('printDateHeader').innerText = "Date: " + (filterDate || "All");
+        document.getElementById('printDateHeader').innerText = "Board Date: " + (filterDate || "All Records");
         list.innerHTML = '';
         
         const filtered = filterDate ? cases.filter(c => c.nextDate === filterDate) : cases;
         filtered.forEach(c => {
             list.innerHTML += `
                 <div class="case-card">
-                    <button class="btn-delete no-print" onclick="deleteCase(${c.id})">Delete</button>
                     <p class="party-name">${c.partyName || 'N/A'} vs ${c.oppParty || 'N/A'}</p>
                     <p><strong>Court:</strong> ${c.court} | <strong>Case No:</strong> ${c.caseNo}</p>
-                    <p><strong>Stage:</strong> ${c.stage} | <strong>Next:</strong> ${c.nextDate}</p>
+                    <p><strong>Stage:</strong> ${c.stage} | <strong>Next Date:</strong> ${c.nextDate}</p>
+                    <p><strong>Mobile:</strong> ${c.mobile} | <strong>Prev. Date:</strong> ${c.prevDate}</p>
                 </div>
             `;
         });
     }
 
-    function clearForm() { document.querySelectorAll('input, select').forEach(i => i.value = ''); }
-    function exportToExcel() { /* CSV Logic */ }
+    function exportToExcel() {
+        let csv = "Prev Date,Court,Type,Case No,Party,Opp Party,Stage,Next Date,Mobile\n";
+        cases.forEach(c => { csv += `${c.prevDate},${c.court},${c.caseType},${c.caseNo},${c.partyName},${c.oppParty},${c.stage},${c.nextDate},${c.mobile}\n`; });
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = 'Kanji_Garchar_LawFirm.csv'; a.click();
+    }
+
+    function clearForm() { document.querySelectorAll('input').forEach(i => i.value = ''); }
     document.getElementById('filterDate').addEventListener('change', displayCases);
     window.onload = displayCases;
 </script>
