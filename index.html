@@ -1,330 +1,145 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="gu">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Law Firm - Kanji M. Garchar</title>
-
-    <meta name="theme-color" content="#1a237e">
     <link rel="manifest" href="manifest.json">
-    
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', function() {
-          navigator.serviceWorker.register('service-worker.js').then(function(reg) {
-            console.log('Service Worker Registered!', reg.scope);
-          }).catch(function(err) {
-            console.log('Service Worker Failed!', err);
-          });
-        });
-      }
-    </script>
-
-    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
-    
     <style>
-        :root { --primary: #1a237e; --accent: #ff6f00; --bg: #f0f2f5; --card: #ffffff; --success: #2e7d32; --neon: #00f2ff; --gold: #d4af37; }
-        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: var(--bg); margin: 0; padding: 0; }
+        :root { --primary: #2c3e50; --secondary: #34495e; --accent: #e67e22; --light: #f4f7f6; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--light); margin: 0; padding: 10px; }
+        .container { max-width: 600px; margin: auto; }
+        h2 { text-align: center; color: var(--primary); margin-bottom: 20px; }
         
-        /* --- Custom CSS Logo (No Image Required) --- */
-        .custom-logo {
-            width: 80px; height: 80px; background: var(--primary); 
-            border: 4px solid var(--gold); border-radius: 50%;
-            display: inline-flex; align-items: center; justify-content: center;
-            color: var(--gold); font-family: 'Playfair Display', serif;
-            font-size: 45px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5); position: relative;
-        }
-        .custom-logo::after {
-            content: "⚖️"; position: absolute; bottom: -5px; font-size: 20px;
-        }
+        /* Form Style */
+        .card { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        input, select { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; margin: 5px 0; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .btn-save { background-color: #27ae60; color: white; }
+        .btn-print { background-color: #2980b9; color: white; }
+        .btn-excel { background-color: #f39c12; color: white; }
 
-        /* Neon Round Clock - 12 Hours */
-        .clock-container { position: sticky; top: 15px; right: 20px; z-index: 1000; display: flex; justify-content: flex-end; pointer-events: none; }
-        .round-clock { 
-            width: 140px; height: 140px; background: #000; color: var(--neon); 
-            border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center;
-            font-family: 'Orbitron', sans-serif; border: 4px solid #333;
-            box-shadow: 0 0 25px rgba(0, 242, 255, 0.5); pointer-events: auto; text-align: center;
-        }
-        .clock-time { font-size: 18px; font-weight: bold; text-shadow: 0 0 10px var(--neon); }
-        .clock-date { font-size: 11px; color: #fff; margin-top: 5px; font-weight: bold; }
-
-        /* Login Page */
-        #loginOverlay { position: fixed; inset: 0; background: linear-gradient(135deg, #1a237e 0%, #000051 100%); display: flex; align-items: center; justify-content: center; z-index: 2000; }
-        .login-box { background: white; padding: 40px; border-radius: 25px; text-align: center; width: 380px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
-        .login-box input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 16px; }
-        .login-box button { width: 100%; padding: 14px; background: var(--accent); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 18px; margin-top: 10px; }
-
-        #mainContent { display: none; padding: 20px; }
-        .container { max-width: 100%; margin: auto; background: var(--card); padding: 30px; border-radius: 20px; border-top: 10px solid var(--primary); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-        
-        .header { text-align: center; margin-bottom: 30px; }
-        .header h1 { color: var(--primary); margin: 0; font-size: 38px; display: flex; align-items: center; justify-content: center; gap: 20px; font-family: 'Playfair Display', serif; }
-        .header p { color: #555; font-weight: bold; letter-spacing: 4px; margin-top: 5px; }
-
-        .form-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; background: #f8f9fa; padding: 20px; border-radius: 15px; margin-bottom: 25px; border: 1px solid #eee; }
-        .form-group { display: flex; flex-direction: column; }
-        label { font-size: 11px; font-weight: bold; margin-bottom: 4px; color: #444; }
-        input, select { padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 13px; }
-        .btn-save { background: var(--success); color: white; cursor: pointer; border: none; padding: 16px; grid-column: span 6; font-weight: bold; font-size: 18px; border-radius: 8px; margin-top: 10px; }
-
-        .toolbar { background: #fff; padding: 15px; border-radius: 12px; margin-bottom: 20px; display: flex; gap: 15px; align-items: center; border: 1px solid #ddd; }
-        .table-wrapper { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; min-width: 1600px; }
-        th { background: var(--primary); color: white; padding: 15px 10px; text-align: left; font-size: 12px; text-transform: uppercase; border: 1px solid #283593; }
-        td { padding: 12px 10px; border: 1px solid #eee; font-size: 14px; }
-        
-        .court-header { background: #e3f2fd; font-weight: bold; padding: 15px; border: 1px solid #bbdefb; font-size: 20px; color: var(--primary); text-align: center; margin-top: 20px; border-radius: 10px 10px 0 0; }
-        .btn-action { padding: 8px 12px; font-size: 11px; border-radius: 5px; border: none; cursor: pointer; color: white; font-weight: bold; margin-right: 4px; }
-
-        #editModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); align-items: center; justify-content: center; z-index: 3000; }
-        .modal-body { background: white; padding: 30px; border-radius: 15px; width: 900px; max-width: 95%; }
+        /* Case Card Style */
+        .case-card { background: white; padding: 15px; border-radius: 8px; border-left: 5px solid var(--accent); margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); position: relative; }
+        .case-card p { margin: 5px 0; font-size: 14px; color: #333; }
+        .case-card .party-name { font-weight: bold; color: var(--primary); font-size: 16px; }
+        .btn-delete { background: #e74c3c; color: white; width: auto; padding: 5px 10px; font-size: 12px; float: right; }
 
         @media print {
-            .no-print, #loginOverlay, .form-grid, .toolbar, .clock-container, .btn-action, #editModal { display: none !important; }
+            .no-print { display: none; }
+            .print-only { display: block !important; }
             body { background: white; }
-            table { width: 100%; border: 1px solid #000; min-width: 100% !important; }
-            th, td { border: 1px solid #000 !important; color: black !important; padding: 5px !important; }
+            .case-card { border: 1px solid #ddd; margin-bottom: 5px; page-break-inside: avoid; }
         }
+        .print-only { display: none; }
     </style>
 </head>
 <body>
 
-<div id="loginOverlay">
-    <div class="login-box">
-        <div class="custom-logo">K</div>
-        <h2 style="color:var(--primary); margin: 20px 0; font-family: 'Playfair Display', serif;">KANJI M. GARCHAR</h2>
-        <input type="text" id="userInput" placeholder="Username" onkeypress="handleKeyPress(event)">
-        <input type="password" id="passInput" placeholder="Password" onkeypress="handleKeyPress(event)">
-        <button onclick="checkLogin()">LOGIN</button>
-    </div>
-</div>
+<div class="container">
+    <div class="no-print">
+        <h2>Kanji M. Garchar Law Firm</h2>
+        
+        <div class="card">
+            <input type="date" id="prevDate" placeholder="Prev. Date">
+            <input type="text" id="court" placeholder="Court Name">
+            <input type="text" id="caseType" placeholder="Case Type">
+            <input type="text" id="caseNo" placeholder="Case No.">
+            <input type="text" id="partyName" placeholder="Party Name">
+            <input type="text" id="oppParty" placeholder="Opp. Party Name">
+            <input type="text" id="stage" placeholder="Stage">
+            <input type="date" id="nextDate" placeholder="Next Date">
+            <input type="tel" id="mobile" placeholder="Mobile No.">
+            <button class="btn-save" onclick="saveCase()">Add Case Entry</button>
+        </div>
 
-<div id="mainContent">
-    <div class="clock-container no-print">
-        <div class="round-clock">
-            <div class="clock-time" id="liveTime">00:00:00 AM</div>
-            <div class="clock-date" id="liveDate">01/01/2026</div>
+        <div class="card">
+            <input type="date" id="filterDate">
+            <button class="btn-print" onclick="window.print()">Print Today's Board</button>
+            <button class="btn-excel" onclick="exportToExcel()">Download Excel Report</button>
         </div>
     </div>
 
-    <div class="container">
-        <div class="header">
-            <h1><div class="custom-logo" style="width:60px; height:60px; font-size:30px; border-width:3px;">K</div> KANJI M. GARCHAR</h1>
-            <p>ADVOCATE & LEGAL CONSULTANT</p>
-        </div>
-
-        <div class="form-grid no-print">
-            <div class="form-group"><label>PREV. DATE</label><input type="date" id="prevDate"></div>
-            <div class="form-group"><label>COURT</label>
-                <select id="courtName">
-                    <option value="Pdj Court">Pdj Court</option><option value="Adj Court">Adj Court</option>
-                    <option value="2nd Adj Court">2nd Adj Court</option><option value="Family Court">Family Court</option>
-                    <option value="JMFC Court">JMFC Court</option><option value="Chief Court">Chief Court</option>
-                    <option value="2nd addi.chief court">2nd addi.chief court</option>
-                    <option value="3rd addi.chief court">3rd addi.chief court</option>
-                    <option value="4th addi.chief court">4th addi.chief court</option>
-                    <option value="Principal Senior Civil">Principal Senior Civil</option>
-                    <option value="JMFC Court Tankara">JMFC Court Tankara</option>
-                    <option value="JMFC Court Maliya">JMFC Court Maliya</option>
-                    <option value="Halvad Court">Halvad Court</option>
-                </select>
-            </div>
-            <div class="form-group"><label>TYPE</label>
-                <select id="caseType">
-                    <option value="cc">cc</option><option value="cram s">cram s</option><option value="crma j">crma j</option>
-                    <option value="cr.en">cr.en</option><option value="s.c.">s.c.</option><option value="cma-dc">cma-dc</option>
-                    <option value="cma-sc">cma-sc</option><option value="Rcs">Rcs</option><option value="rca">rca</option>
-                    <option value="spcs">spcs</option><option value="cri.apl">cri.apl</option><option value="comm.ex">comm.ex</option>
-                    <option value="comm.sc">comm.sc</option><option value="comm.cma">comm.cma</option><option value="cr.RA">cr.RA</option>
-                    <option value="F suit">F suit</option><option value="Glgp">Glgp</option><option value="Macp">Macp</option>
-                    <option value="Mca">Mca</option><option value="Pocso">Pocso</option><option value="Atro">Atro</option>
-                </select>
-            </div>
-            <div class="form-group"><label>CASE NO.</label><input type="text" id="caseNo"></div>
-            <div class="form-group"><label>PARTY NAME</label><input type="text" id="partyName"></div>
-            <div class="form-group"><label>OPP. PARTY</label><input type="text" id="oppParty"></div>
-            <div class="form-group"><label>STAGE</label><input type="text" id="stage"></div>
-            <div class="form-group"><label>NEXT DATE</label><input type="date" id="nextDate"></div>
-            <div class="form-group"><label>MOBILE NO.</label><input type="text" id="phone"></div>
-            <div class="form-group"><label>TOTAL FEE</label><input type="number" id="totalFee" value="0"></div>
-            <div class="form-group"><label>PAID FEE</label><input type="number" id="paidFee" value="0"></div>
-            <div class="form-group"><label>REMARKS</label><input type="text" id="caseNotes"></div>
-            <button class="btn-save" onclick="addRecord()">SAVE CASE RECORD</button>
-        </div>
-
-        <div class="toolbar no-print">
-            <input type="date" id="calenderFilter" onchange="renderTable()">
-            <input type="text" id="searchInput" placeholder="Search Party or Case No..." onkeyup="renderTable()" style="flex-grow:1; padding:12px; border-radius:8px; border:1px solid #ddd;">
-            <button onclick="window.print()" style="background:#444; color:white; padding:12px 20px; border:none; border-radius:8px; cursor:pointer;">PRINT BOARD</button>
-            <button onclick="exportToExcel()" style="background:#1b5e20; color:white; padding:12px 20px; border:none; border-radius:8px; cursor:pointer;">EXCEL BACKUP</button>
-        </div>
-
-        <div id="tableWrapper" class="table-wrapper"></div>
+    <div class="print-only" style="text-align: center;">
+        <h3>Daily Board Report</h3>
+        <p id="printDateHeader"></p>
+        <hr>
     </div>
-</div>
 
-<div id="editModal">
-    <div class="modal-body">
-        <h2 style="color:var(--primary); margin-top:0;">Edit Case Details</h2>
-        <div id="editFields" class="form-grid" style="background:none; border:none; padding:0;"></div>
-        <div style="text-align:right; margin-top:20px;">
-            <button onclick="closeModal()" style="padding:10px 20px; cursor:pointer;">Cancel</button>
-            <button id="updateBtn" style="padding:10px 20px; background:var(--primary); color:white; border:none; cursor:pointer;">Save Changes</button>
-        </div>
-    </div>
+    <div id="caseList"></div>
 </div>
 
 <script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyBJ0zs1OCshaWKAjK6rKpYYv-zRPWNttig",
-        authDomain: "garcharlawfirm.firebaseapp.com",
-        databaseURL: "https://garcharlawfirm-default-rtdb.firebaseio.com",
-        projectId: "garcharlawfirm",
-        storageBucket: "garcharlawfirm.firebasestorage.app",
-        messagingSenderId: "1056505490287",
-        appId: "1:1056505490287:web:f7ae6cbbb49ba9913e169a"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-    let mainData = {};
+    let cases = JSON.parse(localStorage.getItem('lawCases')) || [];
 
-    function handleKeyPress(e) { if (e.key === "Enter") checkLogin(); }
-
-    function updateClock() {
-        const now = new Date();
-        document.getElementById('liveTime').innerText = now.toLocaleTimeString('en-IN', { hour12: true });
-        document.getElementById('liveDate').innerText = now.toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    }
-    setInterval(updateClock, 1000);
-    updateClock();
-
-    function checkLogin() {
-        if(document.getElementById('userInput').value === "kanji" && document.getElementById('passInput').value === "8908") {
-            alert("નવીનતાના કેન્દ્રમાં તમારું સ્વાગત છે!");
-            document.getElementById('loginOverlay').style.display = 'none';
-            document.getElementById('mainContent').style.display = 'block';
-            loadData();
-        } else { alert("Wrong Password!"); }
-    }
-
-    function loadData() { db.ref('cases').on('value', (snap) => { mainData = snap.val() || {}; renderTable(); }); }
-
-    function formatDate(d) {
-        if(!d) return '-';
-        const p = d.split('-');
-        return p.length === 3 ? `${p[2]}-${p[1]}-${p[0]}` : d;
-    }
-
-    function renderTable() {
-        const wrapper = document.getElementById('tableWrapper');
-        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-        const filterDate = document.getElementById('calenderFilter').value;
-        wrapper.innerHTML = '';
-        const grouped = {};
-
-        Object.keys(mainData).forEach(key => {
-            const item = mainData[key];
-            const isMatch = Object.values(item).some(v => String(v).toLowerCase().includes(searchTerm));
-            const isDateMatch = filterDate ? item.next === filterDate : true;
-            if(isMatch && isDateMatch) {
-                if(!grouped[item.court]) grouped[item.court] = [];
-                grouped[item.court].push({key, ...item});
-            }
-        });
-
-        Object.keys(grouped).sort().forEach(court => {
-            let tableHTML = `<div class="court-header">COURT: ${court.toUpperCase()}</div>
-                <table><thead><tr>
-                    <th>Prev. Date</th><th>Type</th><th>No.</th><th>Party Name</th><th>Opp. Party</th><th>Stage</th><th>Next Date</th><th class="no-print">Due</th><th class="no-print">Actions</th>
-                </tr></thead><tbody>`;
-            grouped[court].forEach(item => {
-                tableHTML += `<tr>
-                    <td>${formatDate(item.prev)}</td><td>${item.type}</td><td>${item.caseNo}</td>
-                    <td><b>${item.party}</b></td><td>${item.opp || '-'}</td><td>${item.stage}</td>
-                    <td style="color:red"><b>${formatDate(item.next)}</b></td>
-                    <td class="no-print">₹${(item.total || 0) - (item.paid || 0)}</td>
-                    <td class="no-print">
-                        <button class="btn-action" style="background:#2196F3;" onclick="openEditModal('${item.key}')">EDIT</button>
-                        <button class="btn-action" style="background:#FF9800;" onclick="generateReceipt('${item.key}')">REC</button>
-                        <button class="btn-action" style="background:#25D366;" onclick="sendWA('${item.key}')">WA</button>
-                        <button class="btn-action" style="background:#f44336;" onclick="deleteCase('${item.key}')">DEL</button>
-                    </td></tr>`;
-            });
-            wrapper.innerHTML += tableHTML + `</tbody></table>`;
-        });
-    }
-
-    function addRecord() {
-        const entry = {
-            prev: document.getElementById('prevDate').value, court: document.getElementById('courtName').value,
-            type: document.getElementById('caseType').value, caseNo: document.getElementById('caseNo').value,
-            party: document.getElementById('partyName').value, opp: document.getElementById('oppParty').value,
-            stage: document.getElementById('stage').value, next: document.getElementById('nextDate').value,
-            phone: document.getElementById('phone').value, total: parseFloat(document.getElementById('totalFee').value) || 0,
-            paid: parseFloat(document.getElementById('paidFee').value) || 0, notes: document.getElementById('caseNotes').value
+    function saveCase() {
+        const newCase = {
+            id: Date.now(),
+            prevDate: document.getElementById('prevDate').value,
+            court: document.getElementById('court').value,
+            caseType: document.getElementById('caseType').value,
+            caseNo: document.getElementById('caseNo').value,
+            partyName: document.getElementById('partyName').value,
+            oppParty: document.getElementById('oppParty').value,
+            stage: document.getElementById('stage').value,
+            nextDate: document.getElementById('nextDate').value,
+            mobile: document.getElementById('mobile').value
         };
-        db.ref('cases').push(entry).then(() => {
-            alert("કેસ સાચવવામાં આવ્યો!");
-            document.querySelectorAll('.form-grid input').forEach(i => i.value = (i.type === 'number' ? '0' : ''));
+        cases.push(newCase);
+        localStorage.setItem('lawCases', JSON.stringify(cases));
+        displayCases();
+        clearForm();
+    }
+
+    function clearForm() {
+        document.querySelectorAll('input').forEach(input => input.value = '');
+    }
+
+    function deleteCase(id) {
+        cases = cases.filter(c => c.id !== id);
+        localStorage.setItem('lawCases', JSON.stringify(cases));
+        displayCases();
+    }
+
+    function displayCases() {
+        const list = document.getElementById('caseList');
+        const filterDate = document.getElementById('filterDate').value;
+        const headerDate = document.getElementById('printDateHeader');
+        
+        headerDate.innerText = "Date: " + (filterDate || "All Records");
+        list.innerHTML = '';
+
+        const filtered = filterDate ? cases.filter(c => c.nextDate === filterDate) : cases;
+
+        filtered.forEach(c => {
+            list.innerHTML += `
+                <div class="case-card">
+                    <button class="btn-delete no-print" onclick="deleteCase(${c.id})">Delete</button>
+                    <p class="party-name">${c.partyName} vs ${c.oppParty}</p>
+                    <p><strong>Court:</strong> ${c.court} | <strong>Case No:</strong> ${c.caseNo}</p>
+                    <p><strong>Type:</strong> ${c.caseType} | <strong>Stage:</strong> ${c.stage}</p>
+                    <p><strong>Next Date:</strong> ${c.nextDate} | <strong>Mobile:</strong> ${c.mobile}</p>
+                </div>
+            `;
         });
     }
-
-    function openEditModal(key) {
-        const item = mainData[key];
-        document.getElementById('editFields').innerHTML = `
-            <div class="form-group"><label>PARTY</label><input type="text" id="eParty" value="${item.party}"></div>
-            <div class="form-group"><label>NEXT DATE</label><input type="date" id="eNext" value="${item.next}"></div>
-            <div class="form-group"><label>TOTAL FEE</label><input type="number" id="eTotal" value="${item.total}"></div>
-            <div class="form-group"><label>PAID FEE</label><input type="number" id="ePaid" value="${item.paid}"></div>
-        `;
-        document.getElementById('updateBtn').onclick = () => {
-            db.ref('cases/' + key).update({
-                party: document.getElementById('eParty').value, next: document.getElementById('eNext').value,
-                total: parseFloat(document.getElementById('eTotal').value), paid: parseFloat(document.getElementById('ePaid').value)
-            }).then(() => { closeModal(); alert("Updated!"); });
-        };
-        document.getElementById('editModal').style.display = 'flex';
-    }
-
-    function closeModal() { document.getElementById('editModal').style.display = 'none'; }
-
-    function generateReceipt(key) {
-        const i = mainData[key];
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        doc.setFontSize(22); doc.text("KANJI M. GARCHAR", 105, 20, null, null, "center");
-        doc.setFontSize(12); doc.text("ADVOCATE & LEGAL CONSULTANT", 105, 28, null, null, "center");
-        doc.line(20, 35, 190, 35);
-        doc.text(`Party: ${i.party}`, 20, 50);
-        doc.text(`Case No: ${i.caseNo}`, 20, 60);
-        doc.text(`Total Fee: Rs. ${i.total}`, 20, 70);
-        doc.text(`Paid Fee: Rs. ${i.paid}`, 20, 80);
-        doc.text(`Balance: Rs. ${i.total - i.paid}`, 20, 90);
-        doc.text(`Date: ${new Date().toLocaleDateString()}`, 150, 50);
-        doc.save(`${i.party}_Receipt.pdf`);
-    }
-
-    function sendWA(key) {
-        const i = mainData[key];
-        const msg = `કાનજી એમ. ગરચર લો ફર્મ,\nપાર્ટી: ${i.party}\nકેસ: ${i.caseNo}\nતારીખ: ${formatDate(i.next)}`;
-        window.open(`https://wa.me/91${i.phone}?text=${encodeURIComponent(msg)}`, '_blank');
-    }
-
-    function deleteCase(key) { if(confirm("ખરેખર કાઢી નાખવું છે?")) db.ref('cases/' + key).remove(); }
 
     function exportToExcel() {
-        const rows = Object.values(mainData).map(i => ({ Court: i.court, Party: i.party, NextDate: formatDate(i.next) }));
-        const ws = XLSX.utils.json_to_sheet(rows);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Backup");
-        XLSX.writeFile(wb, "KMG_Data.xlsx");
+        let csv = "Prev Date,Court,Type,Case No,Party,Opp Party,Stage,Next Date,Mobile\n";
+        cases.forEach(c => {
+            csv += `${c.prevDate},${c.court},${c.caseType},${c.caseNo},${c.partyName},${c.oppParty},${c.stage},${c.nextDate},${c.mobile}\n`;
+        });
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.setAttribute('href', url);
+        a.setAttribute('download', 'Law_Firm_Data.csv');
+        a.click();
     }
+
+    document.getElementById('filterDate').addEventListener('change', displayCases);
+    window.onload = displayCases;
 </script>
+
 </body>
 </html>
