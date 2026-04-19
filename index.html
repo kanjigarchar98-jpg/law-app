@@ -4,22 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Law Firm - Kanji M. Garchar</title>
-
-    <meta name="theme-color" content="#1a237e">
-    <link rel="manifest" href="manifest.json">
-    
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', function() {
-          navigator.serviceWorker.register('service-worker.js').then(function(reg) {
-            console.log('Service Worker Registered!', reg.scope);
-          }).catch(function(err) {
-            console.log('Service Worker Failed!', err);
-          });
-        });
-      }
-    </script>
-
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
